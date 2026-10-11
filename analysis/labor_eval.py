@@ -47,6 +47,8 @@ def load(v2_path, legacy_path):
             "excl": f(lg.get("visible_excl")) if lg_ok else 0.0,
             "excl_missing": not lg_ok,
             "lg_sales": f(lg.get("act_sales")) if lg_ok else 0.0,
+            "wtw_legacy": f(lg.get("wtw")) if lg_ok else 0.0,
+            "hidden_excl": f(lg.get("ideal_excl")) - f(lg.get("visible_excl")) if lg_ok else 0.0,
             "mgr_fcst": f(lg.get("mgr_fcst")) if lg_ok else 0.0,
         }
         d["valid"] = d["sales"] > 0 and d["act"] > 0
@@ -58,7 +60,7 @@ def load(v2_path, legacy_path):
 def summarize(rows, weeks):
     s = defaultdict(float)
     for d in rows:
-        for k in ("open_hrs", "sales", "act", "earned", "earned_floor", "wtw", "ot", "excl", "service"):
+        for k in ("open_hrs", "sales", "act", "earned", "earned_floor", "wtw", "wtw_legacy", "ot", "excl", "service"):
             s[k] += d[k]
     s["days"] = len(rows)
     s["productivity"] = s["earned"] / s["service"] if s["service"] else 0
@@ -71,6 +73,8 @@ def summarize(rows, weeks):
     s["sched_gap_wk"] = (s["wtw"] - s["earned"] - s["excl"]) / weeks
     s["exec_gap_wk"] = (s["act"] - s["wtw"]) / weeks
     s["ot_wk"] = s["ot"] / weeks
+    # schedule figures are trusted only where v2 and legacy WTW agree
+    s["sched_agree"] = bool(s["wtw_legacy"]) and abs(s["wtw"] / s["wtw_legacy"] - 1) <= 0.03
     fc = [d for d in rows if d["mgr_fcst"] > 0 and d["lg_sales"] > 0]
     s["fcst_days"] = len(fc)
     s["fcst_bias"] = (sum(d["mgr_fcst"] for d in fc) / sum(d["lg_sales"] for d in fc) - 1) if fc else 0
@@ -122,9 +126,46 @@ def evaluate(days, end, weeks=4):
     out.sort(key=lambda s: -s["productivity"])
     for i, s in enumerate(out, 1):
         s["rank"] = i
-    fleet = summarize([d for d in days if start <= d["date"] <= end and d["valid"]], weeks)
+    win = [d for d in days if start <= d["date"] <= end]
+    fleet = summarize([d for d in win if d["valid"]], weeks)
     return {"window": [start.isoformat(), end.isoformat()], "prior": [p_start.isoformat(), p_end.isoformat()],
-            "stores": out, "fleet": fleet, "flags": flags}
+            "stores": out, "fleet": fleet, "flags": flags, "checks": data_checks(win)}
+
+
+def fmt_days(ds):
+    return ", ".join(d.strftime("%b %-d") for d in sorted(ds))
+
+
+def data_checks(win):
+    """Data problems in the window, worded for the scorecard's notes."""
+    checks = []
+    hidden = defaultdict(list)
+    for d in win:
+        if d["hidden_excl"] > 0.01:
+            hidden[d["store"]].append(d["date"])
+    for st, ds in sorted(hidden.items(), key=lambda x: int(x[0])):
+        checks.append((f"Store {st}", f"The legacy tracker's Sales Ideal total includes hours not in any visible Go-Go, admin or training cell on "
+                       f"{fmt_days(ds)}, most likely overwritten Go-Go formulas. Only the visible cells are used here."))
+    no_legacy = [d for d in win if d["valid"] and d["lg_sales"] == 0]
+    for d in no_legacy:
+        checks.append((f"Store {d['store']}, {d['date'].strftime('%b %-d')}", "The legacy tracker has no actual sales for this day. v2 sales and hours are used."))
+    lg = sum(d["lg_sales"] for d in win if d["valid"] and d["lg_sales"] > 0)
+    v2 = sum(d["sales"] for d in win if d["valid"] and d["lg_sales"] > 0)
+    if lg and abs(v2 / lg - 1) >= 0.01:
+        by_store = defaultdict(lambda: [0.0, 0.0])
+        for d in win:
+            if d["valid"] and d["lg_sales"] > 0:
+                by_store[d["store"]][0] += d["sales"]; by_store[d["store"]][1] += d["lg_sales"]
+        diffs = [v[0] / v[1] - 1 for v in by_store.values()]
+        checks.append(("Sales", f"v2 sales run {abs(max(diffs)) * 100:.0f}–{abs(min(diffs)) * 100:.0f}% {'below' if v2 < lg else 'above'} the legacy trackers "
+                       "and the Labor Hours Variance Report. SPLH here uses v2 sales."))
+    off = [d for d in win if d["wtw_legacy"] and abs(d["wtw"] - d["wtw_legacy"]) > 1]
+    if off:
+        checks.append(("Schedules", f"v2 and legacy disagree on scheduled (WTW) hours on {len(off)} of {len(win)} store-days, "
+                       "so schedule comparisons are quoted only for stores where the two agree within 3%."))
+    if not any(d["ot"] for d in win):
+        checks.append(("Overtime", "The v2 overtime column is empty for the period, so overtime isn't shown."))
+    return checks
 
 
 if __name__ == "__main__":
