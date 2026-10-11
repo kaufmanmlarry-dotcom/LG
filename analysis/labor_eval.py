@@ -43,7 +43,9 @@ def load(v2_path, legacy_path):
             "open_hrs": f(r["store_hrs"]), "sales": f(r["act_sales"]), "act": f(r["act_hrs"]),
             "earned": f(r["earned_sales"]) + f(r["earned_oc"]), "earned_floor": f(r["store_hrs"]) + f(r["earned_oc"]),
             "wtw": f(r["wtw"]), "ot": f(r["ot"]),
-            "excl": f(lg.get("visible_excl")) if lg_ok else f(r["earned_admin"]) + f(r["earned_train"]),
+            # admin and training are only recorded in the legacy trackers
+            "excl": f(lg.get("visible_excl")) if lg_ok else 0.0,
+            "excl_missing": not lg_ok,
             "lg_sales": f(lg.get("act_sales")) if lg_ok else 0.0,
             "mgr_fcst": f(lg.get("mgr_fcst")) if lg_ok else 0.0,
         }
@@ -86,6 +88,7 @@ def evaluate(days, end, weeks=4):
         cur = [d for d in mine if start <= d["date"] <= end]
         bad = [d for d in cur if not d["valid"]]
         flags += [f"{st} {d['date']}: missing sales or hours, excluded" for d in bad]
+        flags += [f"{st} {d['date']}: no legacy row, admin/training not excluded" for d in cur if d["excl_missing"]]
         cur = [d for d in cur if d["valid"]]
         prior = [d for d in mine if p_start <= d["date"] <= p_end and d["valid"]]
         s = summarize(cur, weeks)

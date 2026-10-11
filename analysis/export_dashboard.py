@@ -29,7 +29,7 @@ INSIGHTS = {
 }
 
 NOTES = [
-    ("Sources", "Sales, actual hours and earned hours come from the v2 trackers (the system of record). Go-Go, admin and training hours come from the legacy .xlsm trackers, because v2 records no admin hours."),
+    ("Sources", "Sales, actual hours and earned hours come from the v2 trackers (the system of record). Go-Go, admin and training hours come from the legacy .xlsm trackers, the only place they are recorded."),
     ("Sales", "v2 sales run 3–5% below the legacy trackers and the Labor Hours Variance Report at every store. SPLH here uses v2 sales, so it reads a little lower than the variance report."),
     ("Store 530", "Overwritten Go-Go cells remain in the legacy tracker on Aug 13–16, Sep 21–27, Oct 1 and Oct 4. They don't change this page: earned hours come from v2 and only the visible Go-Go, admin and training cells are used."),
     ("Store 516, Sep 28", "The legacy tracker never got actuals for this day. v2 sales and hours are used."),
