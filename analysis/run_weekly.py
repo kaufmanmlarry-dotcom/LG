@@ -44,7 +44,9 @@ def main():
     print("window ends", end)
     sales = src / "weekly_sales.json"  # Weekly Sales report's Toast cache, if fetched
     args = [py, HERE / "labor_eval.py", work / "daily_v2.csv", work / "daily_legacy.csv", end.isoformat(), work / "eval.json"]
-    subprocess.run(args + ([sales] if sales.exists() else []), check=True)
+    punches = src / "toast"  # parse_toast_time.py output, one CSV per business date
+    extra = [sales if sales.exists() else "-"] + ([punches] if punches.is_dir() else [])
+    subprocess.run(args + extra, check=True)
     subprocess.run([py, HERE / "export_dashboard.py", work / "eval.json", out], check=True)
     res = json.load(open(work / "eval.json"))
     return res

@@ -41,6 +41,24 @@ def load_weekly_sales(path):
     return {(st, WEEK1 + timedelta(days=7 * (int(wk) - 1))): v["n"] for st, weeks in raw.items() for wk, v in weeks.items()}
 
 
+def load_toast(d):
+    """Toast time entries (parse_toast_time.py output): per store-day payable
+    and overtime hours, and overtime hours by role."""
+    if not d:
+        return {}
+    from pathlib import Path
+    out = defaultdict(lambda: {"payable": 0.0, "ot": 0.0, "ot_roles": defaultdict(float)})
+    for p in Path(d).glob("*.csv"):
+        for r in csv.DictReader(open(p)):
+            k = (r["store_code"], p.stem)
+            out[k]["payable"] += f(r["payable_hours"])
+            ot = f(r["overtime_hours"])
+            out[k]["ot"] += ot
+            if ot:
+                out[k]["ot_roles"][r["job_title"].replace(" - Fran", "")] += ot
+    return out
+
+
 def load(v2_path, legacy_path):
     legacy = {(r["store"], r["date"]): r for r in csv.DictReader(open(legacy_path))}
     days = []
@@ -108,7 +126,31 @@ def apply_toast_sales(s, st, start, weeks, toast):
     s["splh_potential"] = s["sales"] / s["earned"] if s["earned"] else 0
 
 
-def evaluate(days, end, weeks=4, toast=None):
+def apply_toast_hours(s, st, cur, weeks, punches):
+    """Overtime comes from Toast (v2's OT column is empty); also record how
+    well v2 actual hours match Toast payable hours."""
+    have = [d for d in cur if (st, d["date"].isoformat()) in punches]
+    if not punches or not have:
+        s["ot_source"] = "none"
+        return
+    roles = defaultdict(float)
+    ot = match = 0.0
+    for d in have:
+        t = punches[(st, d["date"].isoformat())]
+        ot += t["ot"]
+        match += abs(t["payable"] - d["act"]) <= 0.05
+        for k, v in t["ot_roles"].items():
+            roles[k] += v
+    s["ot"] = ot
+    s["ot_wk"] = ot / weeks
+    s["ot_share"] = ot / s["act"] if s["act"] else 0
+    s["ot_top_role"] = max(roles, key=roles.get) if roles else ""
+    s["ot_top_role_share"] = roles[s["ot_top_role"]] / ot if ot else 0
+    s["toast_days"], s["toast_match_days"] = len(have), int(match)
+    s["ot_source"] = "toast"
+
+
+def evaluate(days, end, weeks=4, toast=None, punches=None):
     start = end - timedelta(days=7 * weeks - 1)
     p_end, p_start = start - timedelta(days=1), start - timedelta(days=7 * weeks)
     stores = sorted({d["store"] for d in days}, key=int)
@@ -123,6 +165,7 @@ def evaluate(days, end, weeks=4, toast=None):
         prior = [d for d in mine if p_start <= d["date"] <= p_end and d["valid"]]
         s = summarize(cur, weeks)
         apply_toast_sales(s, st, start, weeks, toast or {})
+        apply_toast_hours(s, st, cur, weeks, punches or {})
         s["store"], s["region"] = st, REGION.get(st, "CO")
         s["wage"] = WAGE[s["region"]]
         s["over_cost_wk"] = s["over_hrs_wk"] * s["wage"]
@@ -167,6 +210,14 @@ def evaluate(days, end, weeks=4, toast=None):
         if big:
             note += f" v2 sales differ from Toast net by 3% or more at {', '.join(big)}: v2 may be missing orders there, which would also lower those stores' earned hours."
         checks = [c for c in checks if c[0] != "Sales"] + [("Sales", note)]
+    if punches:
+        checks = [c for c in checks if c[0] != "Overtime"]
+        tm = sum(s.get("toast_match_days", 0) for s in out)
+        td = sum(s.get("toast_days", 0) for s in out)
+        off = [s["store"] for s in out if s.get("toast_days") and s["toast_match_days"] < s["toast_days"] * 0.9]
+        note = f"Overtime comes from Toast time entries. v2 actual hours match Toast payable hours on {tm} of {td} store-days"
+        note += f"; the gaps are small and concentrated at {', '.join(off)}." if off else "."
+        checks.append(("Hours", note))
     if missing:
         checks.append(("Sales", f"No Toast weekly sales for every week of the window at {', '.join(missing)}; v2 sales used there."))
     return {"window": [start.isoformat(), end.isoformat()], "prior": [p_start.isoformat(), p_end.isoformat()],
@@ -211,8 +262,9 @@ def data_checks(win):
 
 if __name__ == "__main__":
     v2, legacy, end, dst = sys.argv[1], sys.argv[2], date.fromisoformat(sys.argv[3]), sys.argv[4]
-    toast = load_weekly_sales(sys.argv[5] if len(sys.argv) > 5 else None)
-    res = evaluate(load(v2, legacy), end, toast=toast)
+    toast = load_weekly_sales(sys.argv[5] if len(sys.argv) > 5 and sys.argv[5] != "-" else None)
+    punches = load_toast(sys.argv[6] if len(sys.argv) > 6 else None)
+    res = evaluate(load(v2, legacy), end, toast=toast, punches=punches)
     json.dump(res, open(dst, "w"), indent=1, default=str)
     print(f"Window {res['window']}  prior {res['prior']}")
     print(f"{'#':>2} {'st':>5} {'rg':>2} {'sales':>7} {'serv':>6} {'earn':>6} {'prod':>6} {'prior':>6} {'SPLH':>6} {'pot':>6} {'ovr/wk':>6} {'$/wk':>6} {'floor':>5} {'excl':>5} {'schG':>5} {'exeG':>5} {'OT':>4} {'fBias':>6} slow/busy")

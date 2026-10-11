@@ -45,6 +45,9 @@ def insight(s, fleet):
     # raise scheduled hours, so working more than the schedule is still a clean signal
     if s["exec_gap_wk"] >= 8:
         out.append(f"Worked about {s['exec_gap_wk']:.0f} hrs a week more than the posted schedule: shifts running long or unscheduled clock-ins.")
+    if s.get("ot_source") == "toast" and s["ot_wk"] >= 3:
+        role = f", mostly {s['ot_top_role']}" if s["ot_top_role_share"] >= 0.6 else ""
+        out.append(f"Overtime runs about {s['ot_wk']:.0f} hrs a week ({s['ot_share'] * 100:.1f}% of hours){role}.")
     if abs(s["fcst_bias"]) >= 0.10:
         out.append(f"Managers {'over' if s['fcst_bias'] > 0 else 'under'}-forecast sales by {abs(s['fcst_bias']) * 100:.0f}%.")
     if s["floor_share"] >= 0.95:
@@ -67,7 +70,7 @@ if __name__ == "__main__":
     out.mkdir(parents=True, exist_ok=True)
     cols = ["rank", "store", "region", "productivity", "prior_productivity", "change", "splh", "splh_potential",
             "over_hrs_wk", "over_cost_wk", "floor_share", "excl_share", "slow_productivity", "busy_productivity",
-            "fcst_bias", "w1", "w2", "w3", "w4", "sales", "service", "earned", "prior_earned", "prior_service",
+            "fcst_bias", "ot_wk", "ot_share", "w1", "w2", "w3", "w4", "sales", "service", "earned", "prior_earned", "prior_service",
             "window_start", "window_end", "insight"]
     with open(out / "store_scorecard.csv", "w", newline="") as fh:
         w = csv.writer(fh)
@@ -78,6 +81,7 @@ if __name__ == "__main__":
                         round(s["productivity"] - s["prior_productivity"], 4), round(s["splh"], 2), round(s["splh_potential"], 2),
                         round(s["over_hrs_wk"], 1), round(s["over_cost_wk"]), round(s["floor_share"], 3), round(s["excl_share"], 3),
                         round(s["slow_productivity"], 3), round(s["busy_productivity"], 3), round(s["fcst_bias"], 3),
+                        round(s.get("ot_wk", 0), 1), round(s.get("ot_share", 0), 3),
                         *wk, round(s["sales"]), round(s["service"], 2), round(s["earned"], 2),
                         round(s["prior_earned"], 2), round(s["prior_service"], 2),
                         res["window"][0], res["window"][1], insight(s, res["fleet"])])
