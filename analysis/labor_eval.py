@@ -202,8 +202,8 @@ def data_checks(win):
                        "and the Labor Hours Variance Report. SPLH here uses v2 sales."))
     off = [d for d in win if d["wtw_legacy"] and abs(d["wtw"] - d["wtw_legacy"]) > 1]
     if off:
-        checks.append(("Schedules", f"v2 and legacy disagree on scheduled (WTW) hours on {len(off)} of {len(win)} store-days, "
-                       "so schedule comparisons are quoted only for stores where the two agree within 3%."))
+        checks.append(("Schedules", f"Scheduled hours come from v2, which matches WhenToWork; the legacy trackers' WTW column is out of date on {len(off)} of {len(win)} store-days. "
+                       "WhenToWork also holds offsite, borrowed and coverage shifts that are never punched at the store, so a store is only flagged for working more than its schedule, never less."))
     if not any(d["ot"] for d in win):
         checks.append(("Overtime", "The v2 overtime column is empty for the period, so overtime isn't shown."))
     return checks

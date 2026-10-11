@@ -41,7 +41,9 @@ def insight(s, fleet):
         out.append(f"Busy days are the problem: {pct(s['busy_productivity'])} against {pct(s['slow_productivity'])} on slow days.")
     if s["excl_share"] >= fleet["excl_share"] + 0.03:
         out.append(f"Admin, training and Go-Go are {s['excl_share'] * 100:.1f}% of hours against {fleet['excl_share'] * 100:.1f}% for the group: confirm those hours are real.")
-    if s["sched_agree"] and s["exec_gap_wk"] >= 8:
+    # v2 WTW matches WhenToWork; it also carries offsite and borrowed shifts, which only
+    # raise scheduled hours, so working more than the schedule is still a clean signal
+    if s["exec_gap_wk"] >= 8:
         out.append(f"Worked about {s['exec_gap_wk']:.0f} hrs a week more than the posted schedule: shifts running long or unscheduled clock-ins.")
     if abs(s["fcst_bias"]) >= 0.10:
         out.append(f"Managers {'over' if s['fcst_bias'] > 0 else 'under'}-forecast sales by {abs(s['fcst_bias']) * 100:.0f}%.")

@@ -1,6 +1,6 @@
 topic,note
 Sources,"Actual hours and earned hours come from the v2 trackers (the system of record). Sales are Toast net sales from the Weekly Sales report. Go-Go, admin and training hours come from the legacy .xlsm trackers, the only place they are recorded. Earned hours use v2's weighted prep units, so they run 4–8% below the legacy trackers' whole-item counts."
 "Store 516, Sep 28",The legacy tracker has no actuals for this day. v2 hours are used.
-Schedules,"v2 and legacy disagree on scheduled (WTW) hours on 79 of 336 store-days, so schedule comparisons are quoted only for stores where the two agree within 3%."
+Schedules,"Scheduled hours come from v2, which matches WhenToWork; the legacy trackers' WTW column is out of date on 79 of 336 store-days. WhenToWork also holds offsite, borrowed and coverage shifts that are never punched at the store, so a store is only flagged for working more than its schedule, never less."
 Overtime,"The v2 overtime column is empty for the period, so overtime isn't shown."
 Sales,"SPLH uses Toast net sales from the Weekly Sales report. v2 daily sales are used only to split slow and busy days. v2 sales differ from Toast net by 3% or more at 516 (-6%), 99 (-5%): v2 may be missing orders there, which would also lower those stores' earned hours."
