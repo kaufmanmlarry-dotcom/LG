@@ -1,0 +1,408 @@
+<style>
+.ls-wrap { max-width: 72rem; margin-inline: auto; display: grid; gap: var(--cds-gap-xl); font-family: var(--font-anthropic-sans); }
+.ls-head { display: grid; gap: var(--cds-gap-xs); }
+.ls-head h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+.ls-window { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); letter-spacing: .02em; }
+.ls-takeaway { font-size: var(--cds-font-size-body); max-width: 62ch; margin: 0; line-height: 1.5; }
+.ls-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--cds-gap-md); }
+.ls-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-xs); align-content: start; }
+.ls-tile-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.ls-tile-value { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; }
+.ls-tile-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+.ls-good { color: var(--color-ok); }
+.ls-bad { color: var(--color-bad); }
+.ls-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-sm); min-width: 0; }
+.ls-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.ls-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; max-width: 70ch; line-height: 1.45; }
+.ls-grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: var(--cds-gap-md); }
+.ls-chart { position: relative; min-height: 22rem; }
+.ls-heat { position: relative; min-height: 22rem; }
+.ls-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 2; }
+.ls-tip .ls-tip-k { color: var(--cds-text-secondary); }
+.ls-tablebox { overflow-x: auto; }
+.ls-table { border-collapse: collapse; width: 100%; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.ls-table th, .ls-table td { padding: var(--cds-pad-xs) var(--cds-pad-sm); text-align: right; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.ls-table th { color: var(--color-fg-muted); font-weight: var(--cds-font-weight-medium); vertical-align: bottom; white-space: normal; min-width: 4.5rem; }
+.ls-table th:nth-child(-n+3), .ls-table td:nth-child(-n+3) { text-align: left; min-width: 0; }
+.ls-table td.ls-strong { font-weight: var(--cds-font-weight-medium); }
+.ls-stores { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: var(--cds-gap-md); }
+.ls-store { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-sm); align-content: start; }
+.ls-store-top { display: flex; align-items: baseline; gap: var(--cds-gap-sm); flex-wrap: wrap; }
+.ls-store-rank { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.ls-store-name { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+.ls-store-prod { margin-left: auto; font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-heading); font-variant-numeric: tabular-nums; }
+.ls-store p { margin: 0; font-size: var(--cds-font-size-body); line-height: 1.5; }
+.ls-spark { display: block; }
+.ls-method { display: grid; gap: var(--cds-gap-sm); font-size: var(--cds-font-size-body); line-height: 1.5; max-width: 70ch; }
+.ls-method p { margin: 0; }
+.ls-method dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--cds-gap-xs) var(--cds-gap-md); margin: 0; }
+.ls-method dt { font-weight: var(--cds-font-weight-medium); }
+.ls-method dd { margin: 0; }
+.ls-notes { display: grid; gap: var(--cds-gap-sm); margin: 0; padding: 0; list-style: none; font-size: var(--cds-font-size-body); line-height: 1.5; max-width: 75ch; }
+.ls-notes b { font-weight: var(--cds-font-weight-medium); }
+[data-dash-source-state=empty] { color: transparent; }
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+.ls-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); min-height: inherit; }
+.ls-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+@media (max-width: 40rem) { .ls-method dl { grid-template-columns: 1fr; } }
+</style>
+
+<div class="ls-wrap">
+  <header class="ls-head" id="top">
+    <h1>Store labor scorecard</h1>
+    <div class="ls-window">4 weeks, <span data-source="stores" data-field="window_start" data-row="0" class="ls-ws dash-skeleton">—</span> to <span data-source="stores" data-field="window_end" data-row="0" class="ls-we dash-skeleton">—</span>, compared with the 4 weeks before</div>
+    <p class="ls-takeaway">The 12 stores worked <b data-source="fleet" data-field="over_hrs_wk" data-row="0" class="ls-f-over dash-skeleton">—</b> hours a week more than the staffing standard calls for, about <b data-source="fleet" data-field="over_cost_wk" data-row="0" class="ls-f-cost dash-skeleton">—</b> a week. Stores <span data-source="fleet" data-field="top_stores" data-row="0" class="ls-f-top dash-skeleton">—</span> account for <b data-source="fleet" data-field="top_share" data-row="0" class="ls-f-topshare dash-skeleton">—</b> of it.</p>
+  </header>
+
+  <section class="ls-tiles" aria-label="Group totals">
+    <div class="ls-tile">
+      <div class="ls-tile-label">Labor productivity</div>
+      <div class="ls-tile-value dash-skeleton" data-source="fleet" data-field="productivity" data-row="0" id="t-prod">—</div>
+      <div class="ls-tile-sub"><span data-source="fleet" data-field="change" data-row="0" id="t-prod-chg" class="dash-skeleton">—</span> vs prior 4 weeks</div>
+    </div>
+    <div class="ls-tile">
+      <div class="ls-tile-label">Hours over standard, per week</div>
+      <div class="ls-tile-value dash-skeleton" data-source="fleet" data-field="over_hrs_wk" data-row="0" id="t-over">—</div>
+      <div class="ls-tile-sub">All 12 stores, after admin, training and Go-Go</div>
+    </div>
+    <div class="ls-tile">
+      <div class="ls-tile-label">Cost of those hours, per week</div>
+      <div class="ls-tile-value dash-skeleton" data-source="fleet" data-field="over_cost_wk" data-row="0" id="t-cost">—</div>
+      <div class="ls-tile-sub">At $22/hr Colorado, $25/hr San Diego</div>
+    </div>
+    <div class="ls-tile">
+      <div class="ls-tile-label">Sales per service hour</div>
+      <div class="ls-tile-value dash-skeleton" data-source="fleet" data-field="splh" data-row="0" id="t-splh">—</div>
+      <div class="ls-tile-sub"><span data-source="fleet" data-field="splh_potential" data-row="0" id="t-splh-pot" class="dash-skeleton">—</span> if every store staffed to standard</div>
+    </div>
+  </section>
+
+  <section class="ls-grid2">
+    <div class="ls-card" id="productivity-chart">
+      <h2>Productivity by store</h2>
+      <p class="ls-note">Earned hours ÷ service hours. 100% means the store used exactly the hours its item counts called for. The tick is the prior 4 weeks.</p>
+      <div class="ls-chart" data-source="stores" id="prod-chart"></div>
+    </div>
+    <div class="ls-card" id="weekday-heatmap">
+      <h2>Where the extra hours fall</h2>
+      <p class="ls-note">Average hours over standard per day, by weekday. Red is over, green is under.</p>
+      <div class="ls-heat" data-source="dow" id="heat"></div>
+    </div>
+  </section>
+
+  <section class="ls-card" id="rankings">
+    <h2>Rankings</h2>
+    <p class="ls-note">Ranked by productivity. SPLH at standard is the sales per hour a store would reach staffed exactly to standard, so the gap to it is the part the manager controls. Minimum-staffing share is how much of the earned hours is the 1-person-per-open-hour floor: high means a low-volume store.</p>
+    <div class="ls-tablebox">
+      <table class="ls-table" data-source="stores" data-row-key="store" id="rank-table">
+        <thead><tr>
+          <th data-field="rank">#</th>
+          <th data-field="store">Store</th>
+          <th data-field="region">Region</th>
+          <th data-field="productivity">Productivity</th>
+          <th data-field="prior_productivity">Prior 4 wks</th>
+          <th data-field="change">Change</th>
+          <th data-field="splh">SPLH</th>
+          <th data-field="splh_potential">SPLH at standard</th>
+          <th data-field="over_hrs_wk">Hrs over / wk</th>
+          <th data-field="over_cost_wk">$ over / wk</th>
+          <th data-field="floor_share">Minimum-staffing share</th>
+          <th data-field="excl_share">Admin, training, Go-Go share</th>
+          <th data-field="slow_productivity">Slow days</th>
+          <th data-field="busy_productivity">Busy days</th>
+          <th data-field="fcst_bias">Mgr forecast vs actual</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="store-notes" class="ls-head">
+    <h2 style="font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0;">What to look at in each store</h2>
+    <p class="ls-note">In rank order. The small line is weekly productivity for the 4 weeks, against 100%.</p>
+  </section>
+  <div class="ls-stores" id="store-cards"></div>
+
+  <section class="ls-card" id="method">
+    <h2>How it's measured</h2>
+    <div class="ls-method">
+      <dl>
+        <dt>Service hours</dt><dd>Actual hours worked minus admin, training and Go-Go hours.</dd>
+        <dt>Earned hours</dt><dd>For each open hour, the staff the Sales Factor table calls for given the prep items actually sold (1 person up to 22 items, 2 up to 40, 3 up to 60, then one more per 20), plus the opener and closer allowance. Every open hour earns at least 1 person, so a slow store isn't penalized for its minimum staffing.</dd>
+        <dt>Productivity</dt><dd>Earned hours ÷ service hours over the 4 weeks.</dd>
+        <dt>SPLH</dt><dd>Sales ÷ service hours.</dd>
+        <dt>Slow and busy days</dt><dd>Each store's days split at its own median daily sales.</dd>
+        <dt>Mgr forecast vs actual</dt><dd>Manager sales forecast compared with actual sales. Negative means managers forecast low.</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="ls-card" id="data-notes">
+    <h2>About the data</h2>
+    <ul class="ls-notes" data-source="notes" id="notes-list"></ul>
+  </section>
+</div>
+
+<script>
+dash.calc('fleet', {
+  inputs: ['stores'],
+  title: 'Group totals',
+  description: 'Sums each store\'s hours, sales and cost, and ranks the five stores with the most hours over standard.',
+  fn: (stores) => {
+    const n = (r, k) => Number(r[k]);
+    const sum = (k) => stores.reduce((a, r) => a + n(r, k), 0);
+    const earned = sum('earned'), service = sum('service'), sales = sum('sales');
+    const prod = earned / service, prior = sum('prior_earned') / sum('prior_service');
+    const over = sum('over_hrs_wk');
+    const top = [...stores].sort((a, b) => n(b, 'over_hrs_wk') - n(a, 'over_hrs_wk')).slice(0, 5);
+    const topOver = top.reduce((a, r) => a + n(r, 'over_hrs_wk'), 0);
+    return [{
+      productivity: prod, prior_productivity: prior, change: prod - prior,
+      over_hrs_wk: over, over_cost_wk: sum('over_cost_wk'),
+      splh: sales / service, splh_potential: sales / earned,
+      top_stores: top.map((r) => r.store).join(', '), top_share: topOver / over,
+    }];
+  },
+});
+</script>
+
+<script>
+(() => {
+  const pct = d3.format('.1%');
+  const pct0 = d3.format('.0%');
+  const pts = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v * 100).toFixed(1)} pts`;
+  const money = d3.format('$,.0f');
+  const money2 = d3.format('$,.2f');
+  const hrs = d3.format(',.1f');
+  const signed = (v, f) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${f(Math.abs(v))}`;
+  const fmtDate = (s) => d3.utcFormat('%b %-d, %Y')(new Date(s + 'T00:00:00Z'));
+  const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  const DAY_LABEL = { MON: 'Mon', TUE: 'Tue', WED: 'Wed', THU: 'Thu', FRI: 'Fri', SAT: 'Sat', SUN: 'Sun' };
+  const $ = (s) => document.querySelector(s);
+  const css = (name) => getComputedStyle(document.getElementById('dash-root') || document.documentElement).getPropertyValue(name).trim();
+
+  function fail(el) { el.innerHTML = ''; const d = document.createElement('div'); d.className = 'ls-fail'; d.textContent = 'Failed to load'; el.appendChild(d); }
+  function skel(el, on) { el.classList.toggle('dash-skeleton', on); }
+
+  function tipFor(box) {
+    let t = box.querySelector('.ls-tip');
+    if (!t) { t = document.createElement('div'); t.className = 'ls-tip'; t.hidden = true; box.appendChild(t); }
+    return t;
+  }
+  function placeTip(box, tip, x, y) {
+    const bw = box.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+    let left = x + 12, top = y - th - 8;
+    if (left + tw > bw) left = Math.max(0, x - tw - 12);
+    if (top < 0) top = y + 12;
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
+  }
+  function tipRows(tip, head, rows) {
+    tip.innerHTML = '';
+    const h = document.createElement('div'); h.className = 'ls-tip-k'; h.textContent = head; tip.appendChild(h);
+    rows.forEach((r) => { const d = document.createElement('div'); d.textContent = r; tip.appendChild(d); });
+  }
+
+  function drawProdChart(rows) {
+    const box = $('#prod-chart');
+    box.querySelectorAll('svg').forEach((s) => s.remove());
+    const data = rows.map((r) => ({ store: r.store, p: Number(r.productivity), prior: Number(r.prior_productivity), over: Number(r.over_hrs_wk) }));
+    const W = Math.max(280, box.clientWidth), rowH = 26;
+    const svg = d3.select(box).append('svg').attr('width', '100%');
+    const probe = svg.append('text').attr('font-size', 12).text('9999');
+    const labelW = probe.node().getComputedTextLength() + 10; probe.remove();
+    const endProbe = svg.append('text').attr('font-size', 12).text('100.0%');
+    const endW = endProbe.node().getComputedTextLength() + 8; endProbe.remove();
+    const m = { t: 18, r: endW, b: 24, l: labelW };
+    const H = m.t + m.b + rowH * data.length;
+    svg.attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);
+    box.style.minHeight = H + 'px';
+    const lo = Math.min(0.8, d3.min(data, (d) => Math.min(d.p, d.prior)) - 0.02);
+    const hi = Math.max(1.06, d3.max(data, (d) => Math.max(d.p, d.prior)) + 0.01);
+    const x = d3.scaleLinear([lo, hi], [m.l, W - m.r]);
+    const y = d3.scaleBand(data.map((d) => d.store), [m.t, H - m.b]).padding(0.3);
+    const ticks = x.ticks(Math.max(2, Math.floor((W - m.l - m.r) / 70)));
+    svg.append('g').selectAll('line').data(ticks).join('line')
+      .attr('x1', (d) => x(d)).attr('x2', (d) => x(d)).attr('y1', m.t).attr('y2', H - m.b)
+      .attr('stroke', 'var(--cds-chart-grid)').attr('stroke-width', 1);
+    svg.append('g').selectAll('text').data(ticks).join('text')
+      .attr('x', (d) => x(d)).attr('y', H - m.b + 16).attr('text-anchor', 'middle')
+      .attr('font-size', 12).attr('fill', 'var(--color-fg-muted)').text((d) => pct0(d));
+    const muted = 'var(--cds-chart-muted)', crit = 'var(--cds-chart-status-critical)', good = dash.colors[0];
+    const color = (d) => d.p >= 0.98 ? good : d.p < 0.93 ? crit : muted;
+    svg.append('g').selectAll('rect').data(data).join('rect')
+      .attr('x', x(lo)).attr('y', (d) => y(d.store)).attr('height', y.bandwidth())
+      .attr('width', (d) => Math.max(0, x(d.p) - x(lo))).attr('rx', 4).attr('fill', color);
+    svg.append('g').selectAll('line').data(data).join('line')
+      .attr('x1', (d) => x(d.prior)).attr('x2', (d) => x(d.prior))
+      .attr('y1', (d) => y(d.store) - 3).attr('y2', (d) => y(d.store) + y.bandwidth() + 3)
+      .attr('stroke', 'var(--color-fg)').attr('stroke-width', 2);
+    svg.append('line').attr('x1', x(1)).attr('x2', x(1)).attr('y1', m.t - 6).attr('y2', H - m.b)
+      .attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 3');
+    svg.append('text').attr('x', x(1)).attr('y', m.t - 8).attr('text-anchor', 'middle')
+      .attr('font-size', 12).attr('fill', 'var(--color-fg-muted)').text('Standard');
+    svg.append('g').selectAll('text').data(data).join('text')
+      .attr('x', m.l - 8).attr('y', (d) => y(d.store) + y.bandwidth() / 2).attr('dy', '0.35em')
+      .attr('text-anchor', 'end').attr('font-size', 12).attr('fill', 'var(--color-fg)').text((d) => d.store);
+    svg.append('g').selectAll('text').data(data).join('text')
+      .attr('x', (d) => Math.max(x(d.p), x(d.prior)) + 6).attr('y', (d) => y(d.store) + y.bandwidth() / 2).attr('dy', '0.35em')
+      .attr('font-size', 12).attr('fill', 'var(--color-fg-muted)').text((d) => pct(d.p));
+    const tip = tipFor(box);
+    svg.append('g').selectAll('rect').data(data).join('rect')
+      .attr('x', 0).attr('width', W).attr('y', (d) => y(d.store) - y.step() * y.paddingInner() / 2).attr('height', y.step())
+      .attr('fill', 'transparent')
+      .on('mousemove', (ev, d) => {
+        tipRows(tip, `Store ${d.store}`, [`Productivity ${pct(d.p)}`, `Prior 4 weeks ${pct(d.prior)}`, `${signed(d.over, hrs)} hrs a week vs standard`]);
+        tip.hidden = false; const [px, py] = d3.pointer(ev, box); placeTip(box, tip, px, py);
+      })
+      .on('mouseleave', () => { tip.hidden = true; });
+  }
+
+  function drawHeat(rows, order) {
+    const box = $('#heat');
+    box.querySelectorAll('svg').forEach((s) => s.remove());
+    const stores = order.length ? order : [...new Set(rows.map((r) => r.store))];
+    const val = new Map(rows.map((r) => [`${r.store}|${r.weekday}`, r]));
+    const W = Math.max(280, box.clientWidth), rowH = 26;
+    const svg = d3.select(box).append('svg').attr('width', '100%');
+    const probe = svg.append('text').attr('font-size', 12).text('9999');
+    const labelW = probe.node().getComputedTextLength() + 10; probe.remove();
+    const m = { t: 22, r: 4, b: 6, l: labelW };
+    const H = m.t + m.b + rowH * stores.length;
+    svg.attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);
+    box.style.minHeight = H + 'px';
+    const x = d3.scaleBand(DAYS, [m.l, W - m.r]).padding(0.08);
+    const y = d3.scaleBand(stores, [m.t, H - m.b]).padding(0.08);
+    const maxAbs = Math.max(1, d3.max(rows, (r) => Math.abs(Number(r.extra_hrs_per_day))));
+    const badC = css('--cds-chart-status-critical') || 'red';
+    const okC = dash.colors[0];
+    const fill = (v) => v >= 0 ? badC : okC;
+    const op = (v) => 0.12 + 0.78 * Math.min(1, Math.abs(v) / maxAbs);
+    svg.append('g').selectAll('text').data(DAYS).join('text')
+      .attr('x', (d) => x(d) + x.bandwidth() / 2).attr('y', m.t - 8).attr('text-anchor', 'middle')
+      .attr('font-size', 12).attr('fill', 'var(--color-fg-muted)').text((d) => DAY_LABEL[d]);
+    svg.append('g').selectAll('text').data(stores).join('text')
+      .attr('x', m.l - 8).attr('y', (d) => y(d) + y.bandwidth() / 2).attr('dy', '0.35em')
+      .attr('text-anchor', 'end').attr('font-size', 12).attr('fill', 'var(--color-fg)').text((d) => d);
+    const cells = [];
+    stores.forEach((s) => DAYS.forEach((d) => { const r = val.get(`${s}|${d}`); if (r) cells.push({ s, d, v: Number(r.extra_hrs_per_day), sales: Number(r.avg_sales) }); }));
+    const tip = tipFor(box);
+    const g = svg.append('g').selectAll('g').data(cells).join('g');
+    g.append('rect').attr('x', (c) => x(c.d)).attr('y', (c) => y(c.s)).attr('width', x.bandwidth()).attr('height', y.bandwidth())
+      .attr('rx', 3).attr('fill', (c) => fill(c.v)).attr('fill-opacity', (c) => op(c.v));
+    const showNums = x.bandwidth() >= 30;
+    if (showNums) {
+      g.append('text').attr('x', (c) => x(c.d) + x.bandwidth() / 2).attr('y', (c) => y(c.s) + y.bandwidth() / 2).attr('dy', '0.35em')
+        .attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', 'var(--color-fg)')
+        .text((c) => Math.abs(c.v) < 0.05 ? '0' : signed(c.v, d3.format('.1f')));
+    }
+    g.on('mousemove', (ev, c) => {
+      tipRows(tip, `Store ${c.s}, ${DAY_LABEL[c.d]}`, [`${signed(c.v, d3.format('.1f'))} hrs a day vs standard`, `Average sales ${money(c.sales)}`]);
+      tip.hidden = false; const [px, py] = d3.pointer(ev, box); placeTip(box, tip, px, py);
+    }).on('mouseleave', () => { tip.hidden = true; });
+  }
+
+  function drawTable(rows) {
+    const tb = $('#rank-table tbody');
+    tb.innerHTML = '';
+    rows.forEach((r) => {
+      const tr = document.createElement('tr');
+      const chg = Number(r.change), bias = Number(r.fcst_bias);
+      const cells = [
+        [r.rank], [r.store, 'ls-strong'], [r.region],
+        [pct(Number(r.productivity)), 'ls-strong'], [pct(Number(r.prior_productivity))],
+        [pts(chg), chg >= 0 ? 'ls-good' : 'ls-bad'],
+        [money2(Number(r.splh))], [money2(Number(r.splh_potential))],
+        [signed(Number(r.over_hrs_wk), hrs)], [signed(Number(r.over_cost_wk), money)],
+        [pct0(Number(r.floor_share))], [pct(Number(r.excl_share))],
+        [pct0(Number(r.slow_productivity))], [pct0(Number(r.busy_productivity))],
+        [signed(bias, d3.format('.1%'))],
+      ];
+      cells.forEach(([text, cls]) => { const td = document.createElement('td'); td.textContent = text; if (cls) td.className = cls; tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
+  }
+
+  function spark(el, vals) {
+    const W = 120, H = 28, p = 3;
+    const lo = Math.min(0.75, d3.min(vals)), hi = Math.max(1.1, d3.max(vals));
+    const x = d3.scaleLinear([0, vals.length - 1], [p, W - p]);
+    const y = d3.scaleLinear([lo, hi], [H - p, p]);
+    const svg = d3.select(el).append('svg').attr('class', 'ls-spark').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`);
+    svg.append('line').attr('x1', p).attr('x2', W - p).attr('y1', y(1)).attr('y2', y(1)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '3 3');
+    svg.append('path').attr('d', d3.line((d, i) => x(i), (d) => y(d))(vals)).attr('fill', 'none')
+      .attr('stroke', dash.colors[0]).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+    svg.append('circle').attr('cx', x(vals.length - 1)).attr('cy', y(vals[vals.length - 1])).attr('r', 3).attr('fill', dash.colors[0]);
+  }
+
+  function drawStores(rows) {
+    const wrap = $('#store-cards');
+    wrap.innerHTML = '';
+    rows.forEach((r) => {
+      const card = document.createElement('article'); card.className = 'ls-store'; card.id = `store-${r.store}`;
+      const top = document.createElement('div'); top.className = 'ls-store-top';
+      const rank = document.createElement('span'); rank.className = 'ls-store-rank'; rank.textContent = `#${r.rank}`;
+      rank.setAttribute('data-source', 'stores'); rank.setAttribute('data-field', 'rank'); rank.setAttribute('data-where', `store=${encodeURIComponent(r.store)}`);
+      const name = document.createElement('span'); name.className = 'ls-store-name'; name.textContent = `Store ${r.store}`;
+      const prod = document.createElement('span'); prod.className = 'ls-store-prod'; prod.textContent = pct(Number(r.productivity));
+      prod.setAttribute('data-source', 'stores'); prod.setAttribute('data-field', 'productivity'); prod.setAttribute('data-where', `store=${encodeURIComponent(r.store)}`);
+      top.append(rank, name, prod);
+      const sp = document.createElement('div');
+      sp.setAttribute('data-source', 'stores');
+      spark(sp, ['w1', 'w2', 'w3', 'w4'].map((k) => Number(r[k])));
+      const p = document.createElement('p'); p.textContent = r.insight;
+      p.setAttribute('data-source', 'stores'); p.setAttribute('data-field', 'insight'); p.setAttribute('data-where', `store=${encodeURIComponent(r.store)}`);
+      card.append(top, sp, p);
+      wrap.appendChild(card);
+    });
+  }
+
+  function drawNotes(rows) {
+    const ul = $('#notes-list');
+    ul.innerHTML = '';
+    rows.forEach((r) => {
+      const li = document.createElement('li');
+      const b = document.createElement('b'); b.textContent = r.topic + '. ';
+      li.append(b, document.createTextNode(r.note));
+      ul.appendChild(li);
+    });
+  }
+
+  let linked = false;
+  dash.onData(() => {
+    const st = dash.data('stores'), dw = dash.data('dow'), nt = dash.data('notes'), fl = dash.data('fleet');
+    const stRows = st.status === 'ok' ? st.data : [];
+    if (st.status === 'ok' && stRows.length) {
+      const ws = $('.ls-ws'), we = $('.ls-we');
+      ws.textContent = fmtDate(stRows[0].window_start); we.textContent = fmtDate(stRows[0].window_end);
+      skel(ws, false); skel(we, false);
+      skel($('#prod-chart'), false); drawProdChart(stRows);
+      drawTable(stRows); drawStores(stRows);
+    } else if (st.status === 'error') { fail($('#prod-chart')); }
+    else { skel($('#prod-chart'), true); }
+
+    if (dw.status === 'ok') { skel($('#heat'), false); drawHeat(dw.data, stRows.map((r) => r.store)); }
+    else if (dw.status === 'error') fail($('#heat')); else skel($('#heat'), true);
+
+    if (nt.status === 'ok') drawNotes(nt.data);
+
+    const f = fl.status === 'ok' && fl.data.length ? fl.data[0] : null;
+    const set = (sel, text, cls) => { const el = $(sel); if (!el) return; el.textContent = f ? text : '—'; skel(el, !f); el.classList.remove('ls-good', 'ls-bad'); if (f && cls) el.classList.add(cls); };
+    set('#t-prod', f && pct(f.productivity));
+    set('#t-prod-chg', f && pts(f.change), f && (f.change >= 0 ? 'ls-good' : 'ls-bad'));
+    set('#t-over', f && hrs(f.over_hrs_wk));
+    set('#t-cost', f && money(f.over_cost_wk));
+    set('#t-splh', f && money2(f.splh));
+    set('#t-splh-pot', f && money2(f.splh_potential));
+    set('.ls-f-over', f && hrs(f.over_hrs_wk));
+    set('.ls-f-cost', f && money(f.over_cost_wk));
+    set('.ls-f-top', f && f.top_stores);
+    set('.ls-f-topshare', f && pct0(f.top_share));
+
+    if (!linked && st.status === 'ok') {
+      linked = true;
+      const named = document.getElementById(location.hash.slice(1));
+      if (named) { named.scrollIntoView(); dash.setLink(named.id); }
+    }
+  });
+})();
+</script>
