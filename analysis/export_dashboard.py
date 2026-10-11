@@ -52,7 +52,7 @@ def insight(s, fleet):
     return " ".join(out)
 
 
-SOURCES_NOTE = ("Sources", "Sales, actual hours and earned hours come from the v2 trackers (the system of record). "
+SOURCES_NOTE = ("Sources", "Actual hours and earned hours come from the v2 trackers (the system of record). Sales are Toast net sales from the Weekly Sales report. "
                 "Go-Go, admin and training hours come from the legacy .xlsm trackers, the only place they are recorded. "
                 "Earned hours use v2's weighted prep units, so they run 4–8% below the legacy trackers' whole-item counts.")
 

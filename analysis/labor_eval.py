@@ -29,6 +29,18 @@ def f(x):
     return float(x) if x not in ("", None) else 0.0
 
 
+WEEK1 = date(2025, 12, 29)  # fiscal week 1 of 2026 in the Weekly Sales report
+
+
+def load_weekly_sales(path):
+    """Toast weekly net sales by (store, week start) from the Weekly Sales
+    report's cache (_gross_cache_2026.json: {store: {week: {g, n, t}}})."""
+    if not path:
+        return {}
+    raw = json.load(open(path))
+    return {(st, WEEK1 + timedelta(days=7 * (int(wk) - 1))): v["n"] for st, weeks in raw.items() for wk, v in weeks.items()}
+
+
 def load(v2_path, legacy_path):
     legacy = {(r["store"], r["date"]): r for r in csv.DictReader(open(legacy_path))}
     days = []
@@ -82,7 +94,21 @@ def summarize(rows, weeks):
     return dict(s)
 
 
-def evaluate(days, end, weeks=4):
+def apply_toast_sales(s, st, start, weeks, toast):
+    """Use Toast net sales for the window when every week is available;
+    v2 daily sales stay in use for the slow/busy split and weekday averages."""
+    s["v2_sales"] = s["sales"]
+    vals = [toast.get((st, start + timedelta(days=7 * i))) for i in range(weeks)]
+    if toast and all(v is not None for v in vals):
+        s["sales"] = sum(vals)
+        s["sales_source"] = "toast_net"
+    else:
+        s["sales_source"] = "v2"
+    s["splh"] = s["sales"] / s["service"] if s["service"] else 0
+    s["splh_potential"] = s["sales"] / s["earned"] if s["earned"] else 0
+
+
+def evaluate(days, end, weeks=4, toast=None):
     start = end - timedelta(days=7 * weeks - 1)
     p_end, p_start = start - timedelta(days=1), start - timedelta(days=7 * weeks)
     stores = sorted({d["store"] for d in days}, key=int)
@@ -96,6 +122,7 @@ def evaluate(days, end, weeks=4):
         cur = [d for d in cur if d["valid"]]
         prior = [d for d in mine if p_start <= d["date"] <= p_end and d["valid"]]
         s = summarize(cur, weeks)
+        apply_toast_sales(s, st, start, weeks, toast or {})
         s["store"], s["region"] = st, REGION.get(st, "CO")
         s["wage"] = WAGE[s["region"]]
         s["over_cost_wk"] = s["over_hrs_wk"] * s["wage"]
@@ -128,8 +155,22 @@ def evaluate(days, end, weeks=4):
         s["rank"] = i
     win = [d for d in days if start <= d["date"] <= end]
     fleet = summarize([d for d in win if d["valid"]], weeks)
+    fleet["sales"] = sum(s["sales"] for s in out)
+    fleet["splh"] = fleet["sales"] / fleet["service"]
+    fleet["splh_potential"] = fleet["sales"] / fleet["earned"]
+    checks = data_checks(win)
+    gaps = [(s["store"], s["v2_sales"] / s["sales"] - 1) for s in out if s["sales_source"] == "toast_net"]
+    big = [f"{st} ({g * 100:+.0f}%)" for st, g in sorted(gaps, key=lambda x: x[1]) if abs(g) >= 0.03]
+    missing = [s["store"] for s in out if s["sales_source"] != "toast_net"]
+    if gaps:
+        note = "SPLH uses Toast net sales from the Weekly Sales report. v2 daily sales are used only to split slow and busy days."
+        if big:
+            note += f" v2 sales differ from Toast net by 3% or more at {', '.join(big)}: v2 may be missing orders there, which would also lower those stores' earned hours."
+        checks = [c for c in checks if c[0] != "Sales"] + [("Sales", note)]
+    if missing:
+        checks.append(("Sales", f"No Toast weekly sales for every week of the window at {', '.join(missing)}; v2 sales used there."))
     return {"window": [start.isoformat(), end.isoformat()], "prior": [p_start.isoformat(), p_end.isoformat()],
-            "stores": out, "fleet": fleet, "flags": flags, "checks": data_checks(win)}
+            "stores": out, "fleet": fleet, "flags": flags, "checks": checks}
 
 
 def fmt_days(ds):
@@ -148,7 +189,7 @@ def data_checks(win):
                        f"{fmt_days(ds)}, most likely overwritten Go-Go formulas. Only the visible cells are used here."))
     no_legacy = [d for d in win if d["valid"] and d["lg_sales"] == 0]
     for d in no_legacy:
-        checks.append((f"Store {d['store']}, {d['date'].strftime('%b %-d')}", "The legacy tracker has no actual sales for this day. v2 sales and hours are used."))
+        checks.append((f"Store {d['store']}, {d['date'].strftime('%b %-d')}", "The legacy tracker has no actuals for this day. v2 hours are used."))
     lg = sum(d["lg_sales"] for d in win if d["valid"] and d["lg_sales"] > 0)
     v2 = sum(d["sales"] for d in win if d["valid"] and d["lg_sales"] > 0)
     if lg and abs(v2 / lg - 1) >= 0.01:
@@ -170,7 +211,8 @@ def data_checks(win):
 
 if __name__ == "__main__":
     v2, legacy, end, dst = sys.argv[1], sys.argv[2], date.fromisoformat(sys.argv[3]), sys.argv[4]
-    res = evaluate(load(v2, legacy), end)
+    toast = load_weekly_sales(sys.argv[5] if len(sys.argv) > 5 else None)
+    res = evaluate(load(v2, legacy), end, toast=toast)
     json.dump(res, open(dst, "w"), indent=1, default=str)
     print(f"Window {res['window']}  prior {res['prior']}")
     print(f"{'#':>2} {'st':>5} {'rg':>2} {'sales':>7} {'serv':>6} {'earn':>6} {'prod':>6} {'prior':>6} {'SPLH':>6} {'pot':>6} {'ovr/wk':>6} {'$/wk':>6} {'floor':>5} {'excl':>5} {'schG':>5} {'exeG':>5} {'OT':>4} {'fBias':>6} slow/busy")
