@@ -53,7 +53,8 @@ def insight(s, fleet):
 
 
 SOURCES_NOTE = ("Sources", "Sales, actual hours and earned hours come from the v2 trackers (the system of record). "
-                "Go-Go, admin and training hours come from the legacy .xlsm trackers, the only place they are recorded.")
+                "Go-Go, admin and training hours come from the legacy .xlsm trackers, the only place they are recorded. "
+                "Earned hours use v2's weighted prep units, so they run 4–8% below the legacy trackers' whole-item counts.")
 
 
 DOW = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
