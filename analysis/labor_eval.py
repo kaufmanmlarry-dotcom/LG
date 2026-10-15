@@ -225,7 +225,7 @@ def evaluate(days, end, weeks=4, toast=None, punches=None):
 
 
 def fmt_days(ds):
-    return ", ".join(d.strftime("%b %-d") for d in sorted(ds))
+    return ", ".join(f"{d:%b} {d.day}" for d in sorted(ds))
 
 
 def data_checks(win):
@@ -240,7 +240,7 @@ def data_checks(win):
                        f"{fmt_days(ds)}, most likely overwritten Go-Go formulas. Only the visible cells are used here."))
     no_legacy = [d for d in win if d["valid"] and d["lg_sales"] == 0]
     for d in no_legacy:
-        checks.append((f"Store {d['store']}, {d['date'].strftime('%b %-d')}", "The legacy tracker has no actuals for this day. v2 hours are used."))
+        checks.append(("Store " + d['store'] + ", " + f"{d['date']:%b} {d['date'].day}", "The legacy tracker has no actuals for this day. v2 hours are used."))
     lg = sum(d["lg_sales"] for d in win if d["valid"] and d["lg_sales"] > 0)
     v2 = sum(d["sales"] for d in win if d["valid"] and d["lg_sales"] > 0)
     if lg and abs(v2 / lg - 1) >= 0.01:
