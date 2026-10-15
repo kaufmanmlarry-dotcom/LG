@@ -251,10 +251,8 @@ def data_checks(win):
         diffs = [v[0] / v[1] - 1 for v in by_store.values()]
         checks.append(("Sales", f"v2 sales run {abs(max(diffs)) * 100:.0f}–{abs(min(diffs)) * 100:.0f}% {'below' if v2 < lg else 'above'} the legacy trackers "
                        "and the Labor Hours Variance Report. SPLH here uses v2 sales."))
-    off = [d for d in win if d["wtw_legacy"] and abs(d["wtw"] - d["wtw_legacy"]) > 1]
-    if off:
-        checks.append(("Schedules", f"Scheduled hours come from v2, which matches WhenToWork; the legacy trackers' WTW column is out of date on {len(off)} of {len(win)} store-days. "
-                       "WhenToWork also holds offsite, borrowed and coverage shifts that are never punched at the store, so a store is only flagged for working more than its schedule, never less."))
+    # Legacy WTW column: settled 2026-10-15 (Fix 2). It is typed by hand, nothing feeds it since the
+    # legacy trackers were retired, and the Labor Variance report already reads v2 col T. No warning.
     if not any(d["ot"] for d in win):
         checks.append(("Overtime", "The v2 overtime column is empty for the period, so overtime isn't shown."))
     return checks
